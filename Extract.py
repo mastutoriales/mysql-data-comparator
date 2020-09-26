@@ -5,6 +5,7 @@ import difflib
 import sys
 import functools
 import glob
+from prettytable import PrettyTable
 
 class Extract:
   def compare(self):
@@ -23,12 +24,22 @@ class Extract:
 
     for row in results:
       previewTables.append(row[0])
+
+      cursorPreview.execute("describe "+row[0])
+      headers = []
+      
+      for col in cursorPreview.fetchall():
+        headers.append(col[0])
+      
+      prettytable = PrettyTable(headers)
       cursorPreview.execute("select * from "+row[0])
+      
+      for rowData in cursorPreview.fetchall():
+        prettytable.add_row(rowData)
 
       with open('files/preview_'+row[0]+'.txt', 'w') as f:
-        for row in cursorPreview.fetchall():
-          f.write("%s\n" % str(row))
-        f.close()
+        f.write(str(prettytable))
+      f.close()
 
     cursorCurrent = connection.getCurrentCursor()
     cursorCurrent.execute("show full tables where Table_Type = 'BASE TABLE'")
@@ -38,13 +49,23 @@ class Extract:
 
     for row in results:
       currentTables.append(row[0])
+
+      cursorCurrent.execute("describe "+row[0])
+      headers = []
+      
+      for col in cursorCurrent.fetchall():
+        headers.append(col[0])
+      
+      prettytable = PrettyTable(headers)
       cursorCurrent.execute("select * from "+row[0])
+      
+      for rowData in cursorCurrent.fetchall():
+        prettytable.add_row(rowData)
 
       with open('files/current_'+row[0]+'.txt', 'w') as f:
-        for row in cursorCurrent.fetchall():
-          f.write("%s\n" % str(row))
-        f.close()
-
+        f.write(str(prettytable))
+      f.close()
+    
     tables = previewTables + currentTables
     tables = list(set(tables))
     tables.sort()
